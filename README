@@ -1,0 +1,4 @@
+Pyroclean 
+
+PyroClean is  denoising algorithm for amplicon sequencing which eliminates the need for a clustering approach that seeks to model sequence noise. 
+The source code of the project will be released.
