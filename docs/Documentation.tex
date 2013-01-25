@@ -1,0 +1,154 @@
+% XeLaTeX can use any Mac OS X font. See the setromanfont command below.
+% Input to XeLaTeX is full Unicode, so Unicode characters can be typed directly into the source.
+
+% The next lines tell TeXShop to typeset with xelatex, and to open and save the source with Unicode encoding.
+
+%!TEX TS-program = xelatex
+%!TEX encoding = UTF-8 Unicode
+
+\documentclass[12pt]{article}
+\usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+\geometry{a4paper}                   % ... or a4paper or a5paper or ... 
+%\geometry{landscape}                % Activate for for rotated page geometry
+%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{url}
+
+% Will Robertson's fontspec.sty can be used to simplify font choices.
+% To experiment, open /Applications/Font Book to examine the fonts provided on Mac OS X,
+% and change "Hoefler Text" to any of these choices.
+
+\usepackage{fontspec,xltxtra,xunicode}
+\defaultfontfeatures{Mapping=tex-text}
+\setromanfont[Mapping=tex-text]{Baskerville}
+\setsansfont[Scale=MatchLowercase,Mapping=tex-text]{Gill Sans}
+\setmonofont[Scale=MatchLowercase]{Andale Mono}
+
+\title{PyroClean Manual}
+\author{Ricardo H. Ramírez-González}
+%\date{}                                           % Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+
+
+
+\section{Installation}
+
+\subsection{Dependencies}
+
+PyroClean has been developed and compiled in C, using the GCC compiler. Nested functions are used, so at the moment only GCC is supported. We have compiled and run it successfully with gcc 4.2.x and gcc 4.4.x. Other versions may work. It has been tested on Linux and MacOS X. It may work on windows under cygwin, but this has not ben assessed. 
+
+PyroClean works with the sequences in fasta format. You may need sffinfo and sfffile to extract and demultiplex your samples. 
+
+A reference sequence with the ambiguity codes is required, and the program consambig from the EMBOSS suite cam be used to generate this from an alignment of sequences.  
+
+To obtain unique sequences we provide a BioPerl script to cluster the unique sequences. This is not  required by PyroClean, but will reduce the execution time, as it means that PyroClean will only process any given sequence once. The convention to name unique sequences is
+\begin{verbatim}
+SequenceID_COUNT
+\end{verbatim}
+Where COUNT is the number of times a sequence is in the sample. 
+
+\subsection{Compiling}
+
+To compile PyroClean, in the PyroClean folder just type from the PyroClean folder
+
+\begin{verbatim}
+make
+\end{verbatim}
+
+If you are compiling in MacOS X or any other platform that has the nested functions disabled by default, you can compile with:
+\begin{verbatim}
+make MAC=1
+\end{verbatim}
+
+Once you have compiled, the executable will be in
+\begin{verbatim}
+bin/PyroClean
+\end{verbatim}
+
+\section{Running PyroClean}
+
+
+\subsection{Preparing the sequences}
+
+The script UniqueSequence.pl  requires bioperl to prepare a file of unique sequences. It should be run as:
+
+\begin{verbatim}
+scripts/perl UniqueSequence.pl my_sequences.fa > my_unique_sequences.fa
+\end{verbatim}
+
+This script adds to the name of the sequence the number of time it appears in the sample. 
+
+\subsection{Get consensus sequence}
+
+ A consensus reference sequence with ambiguity codes can be generated with consambig from the emboss suite of programs
+\url{http://emboss.bioinformatics.nl/cgi-bin/emboss/consambig}
+The consensus reference sequence must be trimmed such that the first nucleotide of the consensus reference sequences corresponds to the first expected nucleotide from the pyrosequence amplicon. The following is an example of a consensus reference sequence: 
+
+\begin{verbatim}
+>ARTHROPOD_REFERNCE_COI
+NDBNHTNTAYHTHNTNHTNSSNDBNKSDNSNRGNNYDNYNGGNNHNDBNHNNARNNKNNYNRTHCSNNY
+NSARHTNDNNNNNNBNDDNNNNHDNHTNDDNRAHNVHCADDYNWWHAAYDBNNTNDTNACNDBNCABNC
+NTTYNTNATRMTBTTYTTYATRRYNATRCCNNYNNYDRTNGGNGGNTTYRVNRAYTDNHTNNYNCMNNT
+NATRNTNKSNDVNSYNGAYAYRDBNYHYCCNCGNHTDAAYAAYHTNWSNTTHTGRHTNYWNVYNMYNKC
+NHTNNNNNTNHTNNBNNNNDSNNNNNBNDBNDNNNNNRRNNBNGGNWSNGGNTKRACNNTNWAYCCNCC
+NYTNKCNNNNNNNNHNDNNMRHNNNDVNNNNNVNRTNRRHHWNDBNATYHTBNSNHTNCAYNTNDCNGG
+NDYNHSNWBNATYHTNGGNKCNNYNAAYTTHATHDBNACHDBNNTNAWHATVHDNNNNNNNNNNNHNNN
+NHNNVHNHDNNYNHVNHTNYTHNBNTGRDSNRYNNNNNTNACNRYNNTNYTNYTNHWNNTNDSNBTNCC
+NGTNYTNGCNGGNGCHWTYAYNATRYTNHYNNYNGAYCGNARYHTNAAYWSNHSNTTYTWYKMHCCNNN
+NNKNGGNGGNRRHCCNRWHYTNTAYCARCAYYTNYTYTGRTTYTTYGGNCAYCCNGARGTNTW
+\end{verbatim}
+
+
+\subsection{Homopolymer correction}
+
+
+\begin{verbatim}
+PyroClean -r REFERENCE -i INPUT -o OUTPUT -H -l 150 -L 300 
+\end{verbatim}
+where:
+\begin{itemize}
+\item  \verb|-r REFERENCE| is the file obtained with consambig.
+\item \verb|-i INPUT| is the fasta file with unique sequences
+\item \verb|-H | calls the homopolymer correction program
+\item \verb|-l | is the minimum size of sequence to denoise. Sequences shorter than this value will be ignored. 
+\item \verb|-L|  is the maximum length of the sequence (it trims the sequence to that length). If the sequence is shorter, it is denoised anyway. 
+\end{itemize}
+
+
+\subsection{Filter sequences against the consensus reference sequence}
+
+\begin{verbatim}
+PyroClean -r REFERENCE -i INPUT -n NAME -L 220 -o OUTPUT -F -m MISMATCHES
+\end{verbatim}
+where:
+\begin{itemize}
+\item  \verb|REFERENCE|  is the file obtained with consambig. 
+\item  \verb|INPUT| is the output from the homoplymer correction program. 
+\item   \verb|NAME| is a prefix to add to the sequence name (useful for downstream analysis of multiple files)
+\item   \verb|-L|  provides the option to trim the sequences to a particular length.  Because fewer anchor points will be available as homopolymer correction proceeds toward the 3’ end of a sequence, the algorithm will be less able to denoise the 3’ end of a matrix, and this can be excluded
+\item   \verb|OUTPUT| the output file. 
+\item   \verb|-F| calls the filter program (F for Filter)
+\item   \verb|-m| is  the number of allowed mismatches to the REFERENCE
+\end{itemize}
+
+
+\subsection{Filter out low frequency variants}
+\begin{verbatim}
+PyroClean -C -i  INPUT -o OUTPUT -d 0.01 -e 0.1
+\end{verbatim}
+\begin{itemize}
+\item \verb|-C| calls the clustering algorithm
+\item \verb|-i INPUT| is the filtered output. 
+ \item \verb|-d| is the maximum divergence to the most represented sequence.  In the example 0.01 means 1\%, or 1 mismatch for each 100 bases. 
+  \item \verb|-e| is the maximum frequency relative to the parental sequence required to be considered a different sequence.  In the example input above, if two sequences differ by 1\% in sequence similarity, and one of the sequences is less than 10\% of the frequency of the other, it is removed. 
+   \end{itemize}
+
+The frequency of the sequences is represented in the name of the sequence. A typical header will be:
+\begin{verbatim}
+>Seq1_230
+\end{verbatim}
+Where 230 is the number of times a sequence is represented.  It is suggested, but not necessary, to merge the sequences again with the  perl script used in the preparation of the sequences after this step. 
+\end{document}  

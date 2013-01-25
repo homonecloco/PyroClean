@@ -1,0 +1,7 @@
+To install PyroClean, you need gcc. It has been developed with gcc 4.2, it may work with other versions. It requires nested functions. 
+To compile:
+make
+To compile for mac:
+make MAC=1 (or any environment that doesn't have nested functions enabled by default)
+PyroClean executable is located under bin after the compilation. 
+
