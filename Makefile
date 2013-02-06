@@ -20,6 +20,8 @@ CFLAGS_CUNIT          = -L/usr/local/lib
 
 ifdef MAC
  MACFLAG    = -fnested-functions
+ CC = gcc
+#We need to force gcc as nested funcitons are not available on other compilers
 endif 
 
 ARCH = 
@@ -33,9 +35,6 @@ ifdef DEBUG
  OPT                  = $(ARCH)  -Wall  -O0 -g3 $(MACFLAG)  -D__DEBUG 
 endif
 
-#ifdef ENABLE_READ_PAIR
-# OPT +=  -DENABLE_READ_PAIR
-#endif
 
 
 PyroClean: OPT += -DALIGN -g3
